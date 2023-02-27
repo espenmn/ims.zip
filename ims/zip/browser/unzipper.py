@@ -52,10 +52,12 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
+                    #import pdb; pdb.set_trace()
+                    foldername=folder.lower()
                     try:
-                        curr = curr[folder]
+                        curr = curr[foldername]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=folder.lower(), title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=foldername, title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -73,7 +75,9 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         normalizer = getUtility(IFileNameNormalizer)
         chooser = INameChooser(self.context)
-        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent).lower()
+        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
+        #import pdb; pdb.set_trace()
+        newid = newid.lower()
 
         obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
         primary_field = IPrimaryFieldInfo(obj)
@@ -98,6 +102,8 @@ class Unzipper(AutoExtensibleForm, form.Form):
             #        newtitle = ''
 
         else:
+            #if obj.portal_type != 'Image':
+            #    import pdb; pdb.set_trace()
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
         modified(obj)
 
