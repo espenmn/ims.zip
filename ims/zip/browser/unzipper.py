@@ -75,7 +75,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
         chooser = INameChooser(self.context)
         newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
 
-        obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+        obj = plone.api.content.create(container=container, type=portal_type, id=newid.lower(), title=name)
         primary_field = IPrimaryFieldInfo(obj)
 
 
