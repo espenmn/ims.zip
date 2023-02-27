@@ -14,7 +14,7 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from z3c.form import button, form
 from zope.component import getUtility
 from zope.container.interfaces import INameChooser
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
 from .. import _
 from ..interfaces import IUnzipForm
@@ -78,24 +78,31 @@ class Unzipper(AutoExtensibleForm, form.Form):
         obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
         primary_field = IPrimaryFieldInfo(obj)
 
-        #for title in soup.find_all('title'):
-        #    print(title.get_text()
 
         if isinstance(primary_field.field, RichText):
             setattr(obj, primary_field.fieldname, RichTextValue(data))
             html_text = RichTextValue(data).output
-            #search html for title tag
-            soup = BeautifulSoup(html_text, 'html.parser')
+
+            #search html for title tag (used for index.html files)
+            #put a check for obj.title == 'index.html'
+            #soup = BeautifulSoup(html_text, 'html.parser')
             #"hack", just try instead of 'check for title tag present'
-            try:
-                title_text = soup.find("title").text or None
-                if title_text:
-                    obj.title = title_text
-            except:
-                #probably just keep the title as it is (?)
-                #To do: 'Beautify' file name ?
-                newtitle = ''
+            # if obj.title == 'index.html':
+            #    try:
+            #        title_text = soup.find("title").text or None
+            #        if title_text:
+            #            obj.title = title_text
+            #except:
+            #    #probably just keep the title as it is (?)
+            #    #To do: 'Beautify' file name ?
+            #        newtitle = ''
 
         else:
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
         modified(obj)
+
+        #import pdb; pdb.set_trace()
+        #For images, python 3.9 (?)
+        #url.removesuffix('.jpg')
+        new_title = obj.title.strip('.htm').strip('.jpg').strip('.png')
+        obj.title = new_title
