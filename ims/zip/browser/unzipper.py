@@ -55,7 +55,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
                     try:
                         curr = curr[folder]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=folder.lower(), title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -73,9 +73,9 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         normalizer = getUtility(IFileNameNormalizer)
         chooser = INameChooser(self.context)
-        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
+        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent).lower()
 
-        obj = plone.api.content.create(container=container, type=portal_type, id=newid.lower(), title=name)
+        obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
         primary_field = IPrimaryFieldInfo(obj)
 
 
