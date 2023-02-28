@@ -110,5 +110,12 @@ class Unzipper(AutoExtensibleForm, form.Form):
         #import pdb; pdb.set_trace()
         #For images, python 3.9 (?)
         #url.removesuffix('.jpg')
-        new_title = obj.title.strip('.htm').strip('.jpg').strip('.png')
+        #new_title = obj.title.strip('htm').strip('jpg').strip('jpeg').strip('png')
+
+
+        # Examples of things to remove
+        new_title = obj.title.replace('.htm', '')
+        new_title = new_title.replace('.jpg', '')
+        new_title = new_title.replace('.jpeg', '')
+        new_title = new_title.replace('.png', '')
         obj.title = new_title
