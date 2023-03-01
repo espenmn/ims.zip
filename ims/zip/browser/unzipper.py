@@ -48,6 +48,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         for name in zipper.namelist():
             path, file_name = os.path.split(name)
+            #import pdb; pdb.set_trace()
             if file_name:
                 stream = zipper.read(name)
                 curr = self.context
@@ -55,9 +56,9 @@ class Unzipper(AutoExtensibleForm, form.Form):
                     #import pdb; pdb.set_trace()
                     foldername=folder.lower()
                     try:
-                        curr = curr[foldername]
+                        curr = curr[folder]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=foldername, title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -75,17 +76,29 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         normalizer = getUtility(IFileNameNormalizer)
         chooser = INameChooser(self.context)
-        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
+        new_id = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
         #import pdb; pdb.set_trace()
-        newid = newid.lower()
+        newid = new_id.lower()
+        newid = newid.replace('.html', '')
+        newid = newid.replace('.htm', '')
 
-        obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+        try:
+            obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+        finally:
+            obj = plone.api.content.create(container=container, type=portal_type, id=new_id, title=name)
         primary_field = IPrimaryFieldInfo(obj)
 
 
         if isinstance(primary_field.field, RichText):
+            #Remove special characters used in some files
             setattr(obj, primary_field.fieldname, RichTextValue(data))
             html_text = RichTextValue(data).output
+
+            ##.replace('Å', '&Aring;')
+            ##.replace('Æ', '&AElig;')
+            ##.replace('O', '&Oslash;')
+            ##.replace('æ', '&aelig;;')
+            ##.replace('ø', '&oslash;')
 
             #search html for title tag (used for index.html files)
             #put a check for obj.title == 'index.html'
@@ -113,9 +126,13 @@ class Unzipper(AutoExtensibleForm, form.Form):
         #new_title = obj.title.strip('htm').strip('jpg').strip('jpeg').strip('png')
 
 
-        # Examples of things to remove
+        # Examples of things to remove or replace
         new_title = obj.title.replace('.htm', '')
         new_title = new_title.replace('.jpg', '')
         new_title = new_title.replace('.jpeg', '')
         new_title = new_title.replace('.png', '')
+
+
+
+
         obj.title = new_title
