@@ -48,7 +48,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         for name in zipper.namelist():
             path, file_name = os.path.split(name)
-            #import pdb; pdb.set_trace()
+            
             if file_name:
                 stream = zipper.read(name)
                 curr = self.context
@@ -56,9 +56,9 @@ class Unzipper(AutoExtensibleForm, form.Form):
                     #import pdb; pdb.set_trace()
                     foldername=folder.lower()
                     try:
-                        curr = curr[folder]
+                        curr = curr[foldername]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=foldername, title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
