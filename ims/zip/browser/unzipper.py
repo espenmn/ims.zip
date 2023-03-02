@@ -14,10 +14,20 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from z3c.form import button, form
 from zope.component import getUtility
 from zope.container.interfaces import INameChooser
-#from bs4 import BeautifulSoup
 
 from .. import _
 from ..interfaces import IUnzipForm
+
+
+import html
+
+try:
+    # Python 2.6-2.7
+    from HTMLParser import HTMLParser
+except ImportError:
+    # Python 3
+    from html.parser import HTMLParser
+
 
 
 class Unzipper(AutoExtensibleForm, form.Form):
@@ -48,17 +58,14 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         for name in zipper.namelist():
             path, file_name = os.path.split(name)
-            
             if file_name:
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
-                    #import pdb; pdb.set_trace()
-                    foldername=folder.lower()
                     try:
-                        curr = curr[foldername]
+                        curr = curr[folder.lower()]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=foldername, title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=folder.lower(), title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -76,63 +83,38 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         normalizer = getUtility(IFileNameNormalizer)
         chooser = INameChooser(self.context)
-        new_id = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
-        #import pdb; pdb.set_trace()
-        newid = new_id.lower()
+        newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
+        newid = newid.lower()
         newid = newid.replace('.html', '')
         newid = newid.replace('.htm', '')
+        name = name.replace('.html', '')
+        name = name.replace('.htm', '')
 
         try:
+            obj = container[newid]
+        except KeyError:
             obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
-        finally:
-            obj = plone.api.content.create(container=container, type=portal_type, id=new_id, title=name)
+
+
+        #CONVERT text from old windows encoding
         primary_field = IPrimaryFieldInfo(obj)
-
-
+        #print(name)
         if isinstance(primary_field.field, RichText):
-            #Remove special characters used in some files
-            setattr(obj, primary_field.fieldname, RichTextValue(data))
-            html_text = RichTextValue(data).output
-
-            ##.replace('Å', '&Aring;')
-            ##.replace('Æ', '&AElig;')
-            ##.replace('O', '&Oslash;')
-            ##.replace('æ', '&aelig;;')
-            ##.replace('ø', '&oslash;')
-
-            #search html for title tag (used for index.html files)
-            #put a check for obj.title == 'index.html'
-            #soup = BeautifulSoup(html_text, 'html.parser')
-            #"hack", just try instead of 'check for title tag present'
-            # if obj.title == 'index.html':
-            #    try:
-            #        title_text = soup.find("title").text or None
-            #        if title_text:
-            #            obj.title = title_text
-            #except:
-            #    #probably just keep the title as it is (?)
-            #    #To do: 'Beautify' file name ?
-            #        newtitle = ''
-
+            #data3 = str(data)
+            #mytext = obj.text.output
+            try:
+                data2 = str(data, 'Windows-1252').encode('utf-8')
+                setattr(obj, primary_field.fieldname, RichTextValue(data2))
+                #print('Legger ut:' + name)
+            except UnicodeDecodeError:
+                setattr(obj, primary_field.fieldname, RichTextValue(data))
+                print('erro på: ' + name)
+            finally:
+                a = 'nothing';
+                #setattr(obj, primary_field.fieldname, RichTextValue(data))
+                #print(name)
+            #obj.text = RichTextValue(data2),
         else:
-            #if obj.portal_type != 'Image':
-            #    import pdb; pdb.set_trace()
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
+        #print(name)
         modified(obj)
-
-        #import pdb; pdb.set_trace()
-        #For images, python 3.9 (?)
-        #url.removesuffix('.jpg')
-        #new_title = obj.title.strip('htm').strip('jpg').strip('jpeg').strip('png')
-
-
-        # Examples of things to remove or replace
-        new_title = obj.title.replace('.htm', '')
-        new_title = new_title.replace('.jpg', '')
-        new_title = new_title.replace('.jpeg', '')
-        new_title = new_title.replace('.png', '')
-
-
-
-
-        obj.title = new_title
