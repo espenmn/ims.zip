@@ -20,6 +20,8 @@ from ..interfaces import IUnzipForm
 
 
 import html
+from bs4 import BeautifulStoneSoup
+import cgi
 
 try:
     # Python 2.6-2.7
@@ -100,19 +102,41 @@ class Unzipper(AutoExtensibleForm, form.Form):
         primary_field = IPrimaryFieldInfo(obj)
         #print(name)
         if isinstance(primary_field.field, RichText):
+            print(name)
             #data3 = str(data)
             #mytext = obj.text.output
-            try:
-                data2 = str(data, 'Windows-1252').encode('utf-8')
-                setattr(obj, primary_field.fieldname, RichTextValue(data2))
-                #print('Legger ut:' + name)
-            except UnicodeDecodeError:
-                setattr(obj, primary_field.fieldname, RichTextValue(data))
-                print('erro på: ' + name)
-            finally:
-                a = 'nothing';
-                #setattr(obj, primary_field.fieldname, RichTextValue(data))
-                #print(name)
+            #setattr(obj, primary_field.fieldname, RichTextValue(data))
+
+            #import pdb; pdb.set_trace()
+            newvalue = data.decode('Windows-1252')
+            #.encode('ascii', 'xmlcharrefreplace')
+
+            text = newvalue.replace('/n', '').encode('ascii', 'xmlcharrefreplace')
+
+            #text = cgi.escape(newvalue).encode('ascii', 'xmlcharrefreplace')
+            setattr(obj, primary_field.fieldname, RichTextValue( text ))
+
+            #import pdb; pdb.set_trace()
+
+
+            #import pdb; pdb.set_trace()
+            #data2 = str(data, 'Windows-1252').encode('utf-8')
+
+            #import pdb; pdb.set_trace()
+
+            #try:
+            #    data2 = str(data, 'Windows-1252').encode('utf-8')
+            #    setattr(obj, primary_field.fieldname, RichTextValue(data2))
+            #    print('Legger ut:' + name)
+            #except UnicodeDecodeError:
+            #    print('unicode error')
+            #    #    setattr(obj, primary_field.fieldname, RichTextValue(data))
+            #    #    print('erro på: ' + name)
+            #finally:
+            #    print('finally')
+            #    data2 = str(data).encode('utf-8')
+            #    setattr(obj, primary_field.fieldname, RichTextValue(data2))
+            #    print('Finally på: ' + name)
             #obj.text = RichTextValue(data2),
         else:
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
