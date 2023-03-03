@@ -109,12 +109,20 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
             #import pdb; pdb.set_trace()
             newvalue = data.decode('Windows-1252')
+            newvalue = newvalue.replace('\t', '')
+            newvalue = newvalue.replace('\n', '')
+
+            obj.text = RichTextValue(data)
+
+            #import pdb; pdb.set_trace()
+
+
             #.encode('ascii', 'xmlcharrefreplace')
 
-            text = newvalue.replace('/n', '').encode('ascii', 'xmlcharrefreplace')
+            #text = newvalue.replace('/n', '').encode('ascii', 'xmlcharrefreplace')
 
             #text = cgi.escape(newvalue).encode('ascii', 'xmlcharrefreplace')
-            setattr(obj, primary_field.fieldname, RichTextValue( text ))
+            #setattr(obj, primary_field.fieldname, RichTextValue( text ))
 
             #import pdb; pdb.set_trace()
 
