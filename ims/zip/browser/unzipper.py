@@ -67,6 +67,8 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
+                    import pdb; pdb.set_trace()
+                    folder=folder.replace('%20', '-')
                     try:
                         curr = curr[folder.lower()]
                     except KeyError:
@@ -90,6 +92,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
         chooser = INameChooser(self.context)
         newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
         newid = newid.lower()
+        #newid = newid.replace('%20', '-')
         newid = newid.replace('.html', '')
         newid = newid.replace('.htm', '')
         name = name.replace('.html', '')
