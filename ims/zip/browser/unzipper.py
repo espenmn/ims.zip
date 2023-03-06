@@ -18,22 +18,11 @@ from zope.container.interfaces import INameChooser
 from .. import _
 from ..interfaces import IUnzipForm
 
-
 import html
 #from bs4 import BeautifulStoneSoup
 import cgi
 
 import lxml.html.clean
-
-
-try:
-    # Python 2.6-2.7
-    from HTMLParser import HTMLParser
-except ImportError:
-    # Python 3
-    from html.parser import HTMLParser
-
-
 
 class Unzipper(AutoExtensibleForm, form.Form):
     ignoreContext = True
@@ -67,12 +56,11 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
-                    import pdb; pdb.set_trace()
-                    folder=folder.replace('%20', '-')
+                    folder = folder.replace('%20', '-')
                     try:
-                        curr = curr[folder.lower()]
+                        curr = curr[folder]
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=folder.lower(), title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -91,76 +79,33 @@ class Unzipper(AutoExtensibleForm, form.Form):
         normalizer = getUtility(IFileNameNormalizer)
         chooser = INameChooser(self.context)
         newid = chooser.chooseName(normalizer.normalize(name), self.context.aq_parent)
+
         newid = newid.lower()
-        #newid = newid.replace('%20', '-')
+        newid = newid.replace('%20', '-')
         newid = newid.replace('.html', '')
         newid = newid.replace('.htm', '')
         name = name.replace('.html', '')
         name = name.replace('.htm', '')
+        name = name.replace('.jpeg', '')
+        name = name.replace('.jpg', '')
+
+
+        #obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
 
         try:
             obj = container[newid]
         except KeyError:
             obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
 
-
-        #CONVERT text from old windows encoding
         primary_field = IPrimaryFieldInfo(obj)
-        #print(name)
         if isinstance(primary_field.field, RichText):
-            print(name)
-            #data3 = str(data)
-            #mytext = obj.text.output
             #setattr(obj, primary_field.fieldname, RichTextValue(data))
 
-            #import pdb; pdb.set_trace()
             newvalue = data.decode('Windows-1252')
-            #newvalue = data.decode()
-            #newvalue = newvalue.replace('\t', '')
-            newvalue = newvalue.replace('\t\n', '<')
-
+            #newvalue = newvalue.replace('\t\n', '<')
             nvalue = lxml.html.clean.clean_html(newvalue)
-
             obj.text = RichTextValue(nvalue)
 
-
-            #print(obj.text.output)
-
-            #import pdb; pdb.set_trace()
-
-            #obj.text.output.replace('\t', '').replace('\n', '').replace('\\t', '').replace('\\n', '')
-
-
-            #.encode('ascii', 'xmlcharrefreplace')
-
-            #text = newvalue.replace('/n', '').encode('ascii', 'xmlcharrefreplace')
-
-            #text = cgi.escape(newvalue).encode('ascii', 'xmlcharrefreplace')
-            #setattr(obj, primary_field.fieldname, RichTextValue( text ))
-
-            #import pdb; pdb.set_trace()
-
-
-            #import pdb; pdb.set_trace()
-            #data2 = str(data, 'Windows-1252').encode('utf-8')
-
-            #import pdb; pdb.set_trace()
-
-            #try:
-            #    data2 = str(data, 'Windows-1252').encode('utf-8')
-            #    setattr(obj, primary_field.fieldname, RichTextValue(data2))
-            #    print('Legger ut:' + name)
-            #except UnicodeDecodeError:
-            #    print('unicode error')
-            #    #    setattr(obj, primary_field.fieldname, RichTextValue(data))
-            #    #    print('erro på: ' + name)
-            #finally:
-            #    print('finally')
-            #    data2 = str(data).encode('utf-8')
-            #    setattr(obj, primary_field.fieldname, RichTextValue(data2))
-            #    print('Finally på: ' + name)
-            #obj.text = RichTextValue(data2),
         else:
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
-        #print(name)
         modified(obj)
