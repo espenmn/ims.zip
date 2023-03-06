@@ -20,8 +20,11 @@ from ..interfaces import IUnzipForm
 
 
 import html
-from bs4 import BeautifulStoneSoup
+#from bs4 import BeautifulStoneSoup
 import cgi
+
+import lxml.html.clean
+
 
 try:
     # Python 2.6-2.7
@@ -109,12 +112,20 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
             #import pdb; pdb.set_trace()
             newvalue = data.decode('Windows-1252')
-            newvalue = newvalue.replace('\t', '')
-            newvalue = newvalue.replace('\n', '')
+            #newvalue = data.decode()
+            #newvalue = newvalue.replace('\t', '')
+            newvalue = newvalue.replace('\t\n', '<')
 
-            obj.text = RichTextValue(data)
+            nvalue = lxml.html.clean.clean_html(newvalue)
+
+            obj.text = RichTextValue(nvalue)
+
+
+            #print(obj.text.output)
 
             #import pdb; pdb.set_trace()
+
+            #obj.text.output.replace('\t', '').replace('\n', '').replace('\\t', '').replace('\\n', '')
 
 
             #.encode('ascii', 'xmlcharrefreplace')

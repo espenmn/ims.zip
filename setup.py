@@ -22,8 +22,7 @@ setup(name='ims.zip',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'setuptools',
-          'BeautifulSoup'
+          'setuptools'
       ],
       entry_points="""
       # -*- Entry points: -*-
