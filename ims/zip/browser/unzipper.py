@@ -57,6 +57,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
                     folder = folder.replace('%20', '-')
+                    folder = folder.lower()
                     try:
                         curr = curr[folder]
                     except KeyError:
@@ -92,8 +93,11 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         #obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
 
+        finnes = 0
+
         try:
             obj = container[newid]
+            finnes = 1
         except KeyError:
             obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
 
@@ -107,5 +111,7 @@ class Unzipper(AutoExtensibleForm, form.Form):
             obj.text = RichTextValue(nvalue)
 
         else:
-            setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
+            #Dont update image if it exists
+            if finnes == 0:
+                setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
         modified(obj)
