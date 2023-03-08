@@ -48,7 +48,19 @@ class Unzipper(AutoExtensibleForm, form.Form):
         list(self.actions.values())[0].addClass("context")
 
     def unzip(self, zipf, force_files=False):
+
+        #everything = plone.api.content.find(context=self.context)
+        #for thing in everything:
+        #    id = thing.id
+        #    id = id.lower().replace('%20', '-')
+        #    thing.id = id
+        #print('changed ids')
+
+
         zipper = zipfile.ZipFile(BytesIO(zipf.data), 'r')
+
+
+
 
         for name in zipper.namelist():
             path, file_name = os.path.split(name)
@@ -56,17 +68,29 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
-                    folder = folder.replace('%20', '-')
-                    folder = folder.lower()
+                    #tittel = folder
+                    #folder = folder.replace('%20', '-')
+                    #folder = folder.lower()
+                    #try:
+                    #    curr = curr[folder]
+                    #    #curr.title = tittel
+                    #except KeyError:
+                    #    curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
+
                     try:
                         curr = curr[folder]
                     except KeyError:
                         curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
 
+#finally:
+                    #    print('something went wrong')
+
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
 
                 plone.api.portal.show_message(_('Zip file imported'), self.request, type="info")
+
+        print('all done')
         self.request.response.redirect(self.context.absolute_url())
 
     def factory(self, name, content_type, data, container, force_files):
@@ -93,25 +117,33 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         #obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
 
-        finnes = 0
+        finnes = 1
 
+        import pdb; pdb.set_trace()
         try:
             obj = container[newid]
-            finnes = 1
+
         except KeyError:
+            finnes = 0
             obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+
+        print(name)
+        obj.title = name
 
         primary_field = IPrimaryFieldInfo(obj)
         if isinstance(primary_field.field, RichText):
             #setattr(obj, primary_field.fieldname, RichTextValue(data))
-
-            newvalue = data.decode('Windows-1252')
+            a = 1
+            #only add text if item does not exist
+            #if finnes == 1:
+            #newvalue = data.decode('Windows-1252')
             #newvalue = newvalue.replace('\t\n', '<')
-            nvalue = lxml.html.clean.clean_html(newvalue)
-            obj.text = RichTextValue(nvalue)
+            #nvalue = lxml.html.clean.clean_html(newvalue)
+            #obj.text = RichTextValue(nvalue)
 
         else:
             #Dont update image if it exists
-            if finnes == 0:
-                setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
+            #if finnes == 0:
+            #    print(' ** ')
+            setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
         modified(obj)
