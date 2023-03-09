@@ -148,10 +148,13 @@ class Unzipper(AutoExtensibleForm, form.Form):
             #if finnes != 1 xxxx 0:
             try:
                 newvalue = data.decode('Windows-1252')
-                newvalue = newvalue.replace('\t\n', '<')
+                #newvalue = newvalue.replace('\t\n', '<')
                 nvalue = lxml.html.clean.clean_html(newvalue)
                 obj.text = RichTextValue(nvalue)
                 print(name)
+
+            except UnicodeDecodeError:
+                setattr(obj, primary_field.fieldname, RichTextValue(data))
             except lxml.etree.ParserError:
                 print('parse error')
             finally:
