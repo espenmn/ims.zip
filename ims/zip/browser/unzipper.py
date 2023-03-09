@@ -49,18 +49,15 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
     def unzip(self, zipf, force_files=False):
 
-        #everything = plone.api.content.find(context=self.context)
-        #for thing in everything:
-        #    id = thing.id
-        #    id = id.lower().replace('%20', '-')
-        #    thing.id = id
-        #print('changed ids')
+        everything = plone.api.content.find(context=self.context)
+        for thing in everything:
+            id = thing.id
+            id = id.lower().replace('%20', '-')
+            thing.id = id
+        print('changed ids')
 
 
         zipper = zipfile.ZipFile(BytesIO(zipf.data), 'r')
-
-
-
 
         for name in zipper.namelist():
             path, file_name = os.path.split(name)
@@ -68,22 +65,20 @@ class Unzipper(AutoExtensibleForm, form.Form):
                 stream = zipper.read(name)
                 curr = self.context
                 for folder in [f for f in path.split('/') if f]:
-                    #tittel = folder
-                    #folder = folder.replace('%20', '-')
-                    #folder = folder.lower()
-                    #try:
-                    #    curr = curr[folder]
-                    #    #curr.title = tittel
-                    #except KeyError:
-                    #    curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
-
+                    tittel = folder.replace('xxx', '-')
+                    folder = folder.replace('%20', '-')
+                    folder = folder.lower()
                     try:
                         curr = curr[folder]
+                        curr.title = tittel
+                        tittel = tittel + ' *** '
+                        print(tittel)
                     except KeyError:
-                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=folder)
+                        curr = plone.api.content.create(type='Folder', container=curr, id=folder, title=tittel)
 
-#finally:
-                    #    print('something went wrong')
+                    #try:
+                    #    curr.title = tittel
+
 
                 content_type = mimetypes.guess_type(file_name)[0] or ""
                 self.factory(file_name, content_type, stream, curr, force_files)
@@ -119,31 +114,54 @@ class Unzipper(AutoExtensibleForm, form.Form):
 
         finnes = 1
 
-        import pdb; pdb.set_trace()
+
+        #import pdb; pdb.set_trace()
         try:
+            print(name)
             obj = container[newid]
+            self.factory_primary(obj, data, name)
 
         except KeyError:
             finnes = 0
-            obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+            print('key error')
+            print(name)
+            print(newid)
+            try:
+                obj = plone.api.content.create(container=container, type=portal_type, id=newid, title=name)
+                self.factory_primary(obj, data, name)
+            finally:
+                print('folder could not be made')
+        except AttributeError:
+            a = 1
+            print('attribute error')
+        finally:
+            a = 1
 
-        print(name)
-        obj.title = name
 
+
+    def factory_primary(self, obj, data, name):
         primary_field = IPrimaryFieldInfo(obj)
         if isinstance(primary_field.field, RichText):
-            #setattr(obj, primary_field.fieldname, RichTextValue(data))
-            a = 1
+
+            #a = 1
             #only add text if item does not exist
-            #if finnes == 1:
-            #newvalue = data.decode('Windows-1252')
-            #newvalue = newvalue.replace('\t\n', '<')
-            #nvalue = lxml.html.clean.clean_html(newvalue)
-            #obj.text = RichTextValue(nvalue)
+            #if finnes != 1 xxxx 0:
+            try:
+                newvalue = data.decode('Windows-1252')
+                newvalue = newvalue.replace('\t\n', '<')
+                nvalue = lxml.html.clean.clean_html(newvalue)
+                obj.text = RichTextValue(nvalue)
+                print(name)
+            except lxml.etree.ParserError:
+                print('parse error')
+            finally:
+                setattr(obj, primary_field.fieldname, RichTextValue(data))
 
         else:
             #Dont update image if it exists
             #if finnes == 0:
             #    print(' ** ')
             setattr(obj, primary_field.fieldname, primary_field.field._type(data, filename=utils.safe_unicode(name)))
+
+        obj.title = name
         modified(obj)
